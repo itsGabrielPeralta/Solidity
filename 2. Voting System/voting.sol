@@ -41,7 +41,7 @@ contract voting{
     bytes32[] voters;
 
     //  Events
-    event CandidatePresented(string, uint, string);
+    event Candidate_Presented(string, uint, string);
 
 ///     ------------------------------------------------------ MODIFIER & AUX FUNCTIONS -------------------------------------------------------------------
 
@@ -97,6 +97,8 @@ contract voting{
         dataCandidate[_name] = hash_candidate;
         // Add the candidate in the array
         candidates.push(_name);
+        // Emit the event
+        emit Candidate_Presented(_name, _age, _id);
     }
 
     //  Function to visualize the presented candidates
@@ -156,7 +158,7 @@ contract voting{
         if(draw)
             president = "There is a draw between candiddate!";
         
-        // In draw case the variable that returns will be a message that indicate a draw 
+        // On draw case the variable that returns will be a message that indicate a draw 
         return president;
     }
 }
