@@ -2,35 +2,54 @@
 pragma solidity >=0.4.4 < 0.7.0;
 pragma experimental ABIEncoderV2;
 
-// -----------------------------------
-//  ALUMNO   |    ID    |      NOTA
-// -----------------------------------
-//  Marcos |    77755N    |      5
-//  Joan   |    12345X    |      9
-//  Maria  |    02468T    |      2
-//  Marta  |    13579U    |      3
-//  Alba   |    98765Z    |      5
+/*  Program to evaluate a group of students
 
-contract notas {
+    Examples data to prove
+    ------------------------------------------------------
+    STUDENTS  |    ID         |      QUALIFICATION
+    ------------------------------------------------------
+    Antonio   |    24907468D  |      7
+    Lucas     |    54674262L  |      4
+    Javier    |    06360382P  |      2
+    Lucia     |    83897375E  |      9
+    Victoria  |    28768985X  |      8
+*/
+
+contract evaluation {
     
-    // Direccion del profesor
-    address public profesor;
+//  -------------------------------------------------------------------- INITIAL PARAMETER ----------------------------------------------------------
+
+    //  Proffesor address variable. The proffessor will be who executed de contract so he'll be the owner
+    address public proffesor;
     
-    // Constructor 
+    //  Constructor that contains important parameters values
     constructor () public {
-        profesor = msg.sender;
+        //  The address that executed the contract is assigned to professor variable
+        proffesor = msg.sender;
     }
     
-    // Mapping para relacionar el hash de la identidad del alumno con su nota del examen
-    mapping (bytes32 => uint) Notas;
+    //  Mapping to link a hash with a integer number. It will link the students ID with them marks
+    mapping (bytes32 => uint) qualification;
     
-    // Array de los alumnos de pidan revisiones de examen
-    string [] revisiones;
+    //  Students can request a review. The name of the student requesting the review will be stored in the array
+    string [] student_request;
     
-    // Eventos 
-    event alumno_evaluado(bytes32);
-    event evento_revision(string);
-    
+    //  Events 
+    event Evaluated_Student(bytes32);
+    event Review_Request(string);
+
+//  -------------------------------------------------------------------- MODIFIER & AUX FUNCTIONS -----------------------------------------------------
+
+    /*  Only proffessor can execute the functions that have this modifier
+        _sender: address 
+    */
+    modifier OnlyProffessor(address _executingAddress){
+        require(_executingAddress == proffessor, "This address don't have permissions to execute this function.");
+        _;
+    }
+
+//  -------------------------------------------------------------------- FUNCTIONS --------------------------------------------------------------------
+
     // Funcion para evaluar a alumnos
     function Evaluar(string memory _idAlumno, uint _nota) public UnicamenteProfesor(msg.sender){
         // Hash de la identificacion del alumno 
@@ -41,12 +60,7 @@ contract notas {
         emit alumno_evaluado(hash_idAlumno);
     }
     
-    // Control de las funciones ejecutables por el profesor
-    modifier UnicamenteProfesor(address _direccion){
-        // Requiere que la direccion introducido por parametro sea igual al owner del contrato
-        require(_direccion == profesor, "No tienes permisos para ejecutar esta funcion.");
-        _;
-    }
+
     
     // Funcion para ver las notas de un alumno 
     function VerNotas(string memory _idAlumno) public view returns(uint) {
