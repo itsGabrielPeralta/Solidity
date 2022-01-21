@@ -1,3 +1,19 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.4.4 < 0.7.0;
+pragma experimental ABIEncoderV2;
+
+/*  Program to evaluate a group of students
+
+    Examples data to prove
+    ------------------------------------------------------
+    STUDENTS  |    ID         |      QUALIFICATION
+    ------------------------------------------------------
+    Antonio   |    24907468D  |      7
+    Lucas     |    54674262L  |      4
+    Javier    |    06360382P  |      2
+    Lucia     |    83897375E  |      9
+    Victoria  |    28768985X  |      8
+*/
 
 contract evaluation {
     
@@ -72,5 +88,4 @@ contract evaluation {
         // Just return the array where the id of the students who have requested the review are add
         return review_request;
     }
-    
 }
