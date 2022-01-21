@@ -28,7 +28,7 @@ contract evaluation {
         proffesor = msg.sender;
     }
     
-    //  Mapping to link a hash with a integer number. It will link the students ID with them marks
+    //  Mapping to link a hash with an integer number. It will link the students ID with them marks
     mapping (bytes32 => uint) qualification;
     
     //  Students can request a review. The name of the student requesting the review will be stored in the array
