@@ -3,7 +3,6 @@ pragma solidity >=0.4.4 < 0.7.0;
 pragma experimental ABIEncoderV2;
 
 /*  Program to evaluate a group of students
-
     Examples data to prove
     ------------------------------------------------------
     STUDENTS  |    ID         |      QUALIFICATION
@@ -20,12 +19,12 @@ contract evaluation {
 //  -------------------------------------------------------------------- INITIAL PARAMETER ----------------------------------------------------------
 
     //  Proffesor address variable. The proffessor will be who executed de contract so he'll be the owner
-    address public proffesor;
+    address public proffessor;
     
     //  Constructor that contains important parameters values
     constructor () public {
         //  The address that executed the contract is assigned to professor variable
-        proffesor = msg.sender;
+        proffessor = msg.sender;
     }
     
     //  Mapping to link a hash with an integer number. It will link the students ID with them marks
@@ -78,9 +77,9 @@ contract evaluation {
     */
     function ReviewRequest(string memory _idStudent) public {
         // The student id requesting the review is added to the review request array
-        review_request.push(_idAlumno);
+        review_request.push(_idStudent);
         // Emits the event to indicate that a student has requested a review
-        emit ReviewRequest(_idStudent);
+        emit Review_Request(_idStudent);
     }
     
     // Function to view the students' history who have requested a review
