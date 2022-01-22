@@ -1,29 +1,26 @@
-/* LIBRERÍA SAFEMATH. Esta librería sirve para comprobar que las operaciones que se realizan son 
-	correctas, comprobando los overflows */ 
-
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.4 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-
-// Implementacion de la libreria SafeMath para realizar las operaciones de manera segura
-// Fuente: "https://gist.github.com/giladHaimov/8e81dbde10c9aeff69a1d683ed6870be"
+/*  SAFEMATH LIBRARY. This library is used to verify the operations are correct by checking the overflows
+    Source: "https://gist.github.com/giladHaimov/8e81dbde10c9aeff69a1d683ed6870be"
+*/
 
 library SafeMath{
-    // Restas
+    // Subtract
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
       assert(b <= a);
       return a - b;
     }
     
-    // Sumas
+    // Sum
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
       uint256 c = a + b;
       assert(c >= a);
       return c;
     }
     
-    // Multiplicacion
+    // Multiplication
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
         if (a == 0) {
             return 0;
