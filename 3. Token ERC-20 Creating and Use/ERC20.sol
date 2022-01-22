@@ -4,39 +4,58 @@ pragma experimental ABIEncoderV2;
 import "./SafeMath.sol";
 
 
-//Interface de nuestro token ERC20
+//  Token ERC20 Interface
 interface IERC20{
-    //Devuelve la cantidad de tokens en existencia
+
+    //  Returns the total amount of token that the contract has
     function totalSupply() external view returns (uint256);
 
-    //Devuelve la cantidad de rokens para una dirección indicada por parámetro
+    /*  Returns the amount of token that an address has
+        account: address whose amount of token want to know
+    */  
     function balanceOf(address account) external view returns (uint256);
 
-    //Devuelve el número de token que el spender podrá gastar en nombre del propietario (owner)
+    /*  Returns the amount of token that an address can use with the permission of the original owner of the token
+        owner: token's owner
+        spender: address that wants to use the tokens
+    */
     function allowance(address owner, address spender) external view returns (uint256);
 
-    //Devuelve un valor booleano resultado de la operación indicada
+    /*  Function to transfer from the address who executes the function to another address
+        recipient: address that receives the tokens
+        amount: token amount to transfer
+    */
     function transfer(address recipient, uint256 amount) external returns (bool);
 
-    //Devuelve tokens del usuario al contrato
-    function returnToken(address _cliente, address recipient, uint256 amount) external returns (bool);
+    /*  Function to transfer from an address to another
+        spender: address who transfer
+        recipient: address who receive
+        amount: token amount to transfer
+    */
+    function returnToken(address spender, address recipient, uint256 amount) external returns (bool);
 
-    //Devuelve un valor booleano con el resultado de la operación de gasto
+    /*  Function to give permission an address over a token amount
+        spender: address who want to have permission over the tokens 
+        amount: token amount over spender will have permissions
+    */
     function approve(address spender, uint256 amount) external returns (bool);
 
-    //Devuelve un valor booleano con el resultado de la operación de paso de una cantidad de tokens usando el método allowance()
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    /*  Function to send token from the owner to a buyer address
+        owner: token's owner
+        buyer: address who buy the tokens
+        amount: token amount to buy
+    */
+    function transferFrom(address owner, address buyer, uint256 amount) external returns (bool);
 
 
 
-    //Evento que se debe emitir cuando una cantidad de tokens pase de un origen a un destino
+    //  Events
     event Transfer(address indexed from, address indexed to, uint256 value);
-
-    //Evento que se debe emitir cuando se establece una asignación con el mmétodo allowance()
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-//Implementación de las funciones del token ERC20
+
+//  In the interface the functions were started and in the contract their funcionality is implemented
 contract ERC20Basic is IERC20{
 
     string public constant name = "ERC20BlockchainAZ";
