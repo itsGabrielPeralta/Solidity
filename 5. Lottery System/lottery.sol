@@ -5,167 +5,195 @@ import "./ERC20.sol";
 
 contract loteria {
 
-// ---------------------------------------------------------- DECLARACIONES INICIALES --------------------------------------------------
+/// ---------------------------------------------------------- INITIAL PARAMETERS --------------------------------------------------
 
-    // Instancia del contrato del token
+    // Token Contract Instance
     ERC20Basic private token;
 
-    // Direcciones
+    //  Owner Address variable
     address public owner;
-    address public contrato;
+    //  Contract address variable
+    address public contractAddress;
 
-    // Número de tokens a crear
-    uint public tokens_creados = 10000;
-    // Precio de un token
-    uint public precio_token = 1 ether;
-    // Precio de un boleto en tokens
-    uint public precio_boleto = 5;
+    //  Initial tokens amount
+    uint public initialTokens = 10000;
+    //  Token price in ether
+    uint public tokenPrice = 1 ether;
+    //  Price of a lottery ticket in tokens
+    uint public ticketPrice = 5;
 
     constructor() public {
-        token = new ERC20Basic(tokens_creados);
+        //  Define the token parameter
+        token = new ERC20Basic(initialTokens);
+        //  The owner will be the address deploying the contract
         owner = msg.sender;
-        contrato = address(this);
+        //  Contract address
+        contractAddress = address(this);
     }
 
-    // Relación entre la persona que compra los boletos y el número del boleto 
-    mapping(address => uint[]) idPersona_boletos;
+    //  Mapping with address -> integer number array. The relationship will be between an address buying a ticket and the ticket number
+    mapping(address => uint[]) TicketNumber;
     // Relación para identificar al ganador, relacionando el número ganador con la dirección
-    mapping(uint => address) ADN_boleto;
-    // Número aleatorio
+    //  Mapping with integer number -> address. The relationship will be between the tickets number and the address having this number
+    mapping(uint => address) NumberAddress;
+    //  Random Number Variable
     uint randNonce = 0;
-    // Boletos generados
-    uint[] boletos_comprados;
+    //  Array with the created tickets
+    uint[] PurchasedTickets;
 
-    // Eventos
-    event boleto_comprado(uint, address);
-    event boleto_ganador(uint);
+    // Events
+    event Purchased_Tickets(uint, address);
+    event Winner_Tickets(uint);
 
+/// ---------------------------------------------------------- MODIFIER & AUX FUNCTIONS ----------------------------------------------
 
-// ---------------------------------------------------------- GESTIÓN TOKEN ---------------------------------------------------
-
-    // Función para establecer el precio del token
-    function PrecioToken (uint _numTokens) internal view returns(uint) {
-        return _numTokens * precio_token;
+    /*  Modifier that controls that only the owner can execute
+        _addressExecuter: address executing 
+    */
+    modifier OnlyOwner(address _addressExecuter) {
+        require(_addressExecuter == owner, "This address don't has permission to execute this function.");
+        _;
     }
 
-    // Función para generar más tokens
-    function GenerarTokens (uint _numTokens) public SoloPropietario(msg.sender) {
+    /*  Modifier that ensures that the address has enough Ether to bear the cost
+        _numTokens: token amount to check
+    */
+    modifier CheckTokenPurchase(uint _numTokens) {
+        require(_numTokens > 0, "The token number must be higher than 0.");
+        //  Contract Token Balance
+        uint _contractBalance = ContractBalance();
+        //  The contract balance must be higher or equal than num tokens requested
+        require(_contractBalance >= _numTokens, "The contract don't has enough tokens. The amount must be lower.");
+        //  Token Cost Variable
+        uint _cost = TokenPrice(_numTokens);
+        //  The ehter sent with the function must be higher or equal than cost
+        require(msg.value >= _cost, "This address don't has enough Ether to purchased the token amount introduced.");
+        _;
+    }
+
+    /*  Modifier to check the tickets purchased
+        _numTickets: tikect amount to purchased
+    */
+    modifier CheckTicketPurchase(uint _numTickets) {
+        //  Variable with the tickets cost
+        uint _ticketPrice = _numTickets * ticketPrice;
+        //  Ckeck if address has enough token to bear the tickets purchased
+        require(_ticketPrice <= token.balanceOf(msg.sender), "This address don't has enough token to purchased the ticket amount introduced.");
+        _;
+    }
+
+    /*  Modifier to control the token returns
+        _numTokens: token amount to purchased
+        _addressExecuter: address to check 
+    */
+    modifier CheckTokenReturns(uint _numTokens, address _addressExecuter) {
+        //  Token amount must be higher than 0
+        require(_numTokens > 0, "Token amount must be higher than 0.");
+        //  Address must be has enough token to return the amount introduced
+        require(_numTokens <= token.balanceOf(_addressExecuter), "This address don't has enough tokens.");
+        _;
+    }
+
+
+///  --------------------------------------------------------- TOKEN MANAGEMENT ---------------------------------------------------
+
+    /*  Function to consult the price of token amount
+        _numTokens: amount tokens to know the price
+    */
+    function TokenPrice(uint _numTokens) internal view returns(uint) {
+        return _numTokens * tokenPrice;
+    }
+
+    /*  Function to generate more tokens
+        _numTokens: token amount to create
+    */
+    function TokenGeneration(uint _numTokens) public OnlyOwner(msg.sender) {
         token.increaseTotalSupply(_numTokens);
     }
 
-    // Función para comprar tokens
-    function ComprarTokens(uint _numTokens) public payable ComprobarCompraToken(_numTokens) {
-        // Calcular el precio de los tokens
-        uint coste = PrecioToken(_numTokens);
+    /*  Function to purchased tokens
+        _numTokens: token amount to purchased
+    */
+    function TokenPurchased(uint _numTokens) public payable CheckTokenPurchase(_numTokens) {
+        //  Calculate token cost
+        uint cost = TokenPrice(_numTokens);
         // Si se envía más ether del que se corresponde con los tokes que se piden se devuelven esos ether. Se crea variable para ello
-        uint returnValue = msg.value - coste;
-        // Transferencia de esta diferencia
+        //  Check the difference between the ehter value sent with the function and the real cost
+        uint returnValue = msg.value - cost;
+        //  It there is a difference value will be return to the address
         msg.sender.transfer(returnValue);
-        // Transferencia de tokens al comprador
+        //  The tokens purchased are transfers to the address
         token.transfer(msg.sender, _numTokens);
     }
 
-    // Función para ver el balance del contrato
-    function BalanceContrato() public view returns(uint) {
-        return token.balanceOf(contrato);
+    //  Function to consult the contrat balance
+    function ContractBalance() public view returns(uint) {
+        return token.balanceOf(contractAddress);
     }
 
-    // Función para obtener el balance de los tokens acumulados en el bote 
-    function ConsultarBote() public view returns (uint) {
-        // El bote se va a guardar en la dirección del propietario
+    //  Function to consult the token pot
+    function CheckPot() public view returns (uint) {
+        //  The pot will be in the owner address
         return token.balanceOf(owner);
     }
 
-    // Función para que cada usuario vea su balance 
-    function MisTokens() public view returns(uint) {
+    //  Function to check owned tokens
+    function MyTokens() public view returns(uint) {
         return token.balanceOf(msg.sender);
     }
 
-// ---------------------------------------------------------- GESTIÓN LOTERÍA ---------------------------------------------------
+/// ---------------------------------------------------------- LOTTERY MANAGEMENT ---------------------------------------------------
 
-    // Función para comprar boletos 
-    function ComprarBoletos(uint _numBoletos) public ComprobarCompraBoletos(_numBoletos) {
-        // Se calcula el precio de los boletos en tokens
-        uint precio_boletos = _numBoletos * precio_boleto;
-        // Transferencia de tokens desde el usuario al propietario
-        token.returnToken(msg.sender, owner, precio_boletos);
-        // Asignar un número aleatorio a los boletos 
-        for(uint i = 0 ; i < _numBoletos ; i++){
+    /*  Function to purchased tickets
+        _numTickets: amount of tickets to purchased
+    */
+    function TicketsPurchase(uint _numTickets) public CheckTicketPurchase(_numTickets) {
+        //  It's is calculated the tickets cost
+        uint _costTicket = _numTickets * ticketPrice;
+        //  Tokens are transfered from client to owner
+        token.returnToken(msg.sender, owner, _costTicket);
+        //  A random number is generated to assign to the ticket
+        for(uint i = 0 ; i < _numTickets ; i++){
             /* Para simular la generación de un método aleatorio se toma la marca de tiempo actual, la dirección del usuario y un nonce para 
                 realizar un hash de estos parámetros y se obtiene el módulo al dividir por 10000 para coger lo últimos 4 dígitos del hash dando un valor
                 aleatorio entre 0-9999
             */
             uint random = uint(keccak256(abi.encodePacked(now, msg.sender, randNonce))) % 10000;
-            randNonce++; // Se aumenta el valor con cada ejecución de este bucle para que cada boleto comprado en este contrato sea distinto
-            // Se almacena los datos en los boletos y se da por comprado 
-            idPersona_boletos[msg.sender].push(random);
-            // Se almacena en este mapping para poder seleccionar luego ganador
-            ADN_boleto[random] = msg.sender;
-            emit boleto_comprado(random, msg.sender);
+            randNonce++; // The value is increased in order to each ticket number is different
+            //  The ticket number generated is add to the tickets owned by this address
+            TicketNumber[msg.sender].push(random);
+            //  The number is associated with this address 
+            NumberAddress[random] = msg.sender;
+            emit Purchased_Tickets(random, msg.sender);
         }
     }
 
-    // Función para visualizar el usuario sus números de boleto 
-    function MisBoletos() public view returns(uint[] memory) {
-        return idPersona_boletos[msg.sender];
+    //  Function to consult the ticket number of an address 
+    function MyTickets() public view returns(uint[] memory) {
+        return TicketNumber[msg.sender];
     }
 
-    // Función para generar un ganador e ingresarle los tokens 
-    function GenerarGanador() public SoloPropietario(msg.sender) {
-        require(boletos_comprados.length > 0, "No hay boletos comprados");
-        // Variable con el tamaño del array de boletos
-        uint longitud = boletos_comprados.length;
-        // Se escoge aleatoriamente una posición del array. Se hace con un uint de más por si el resultado es decimal quedarse con la parte entera del número 
-        uint posicion_array = uint(uint(keccak256(abi.encodePacked(now))) % longitud);
-        // Selección del número aleatorio mediante la posición del array
-        uint eleccion = boletos_comprados[posicion_array];
-        emit boleto_ganador(eleccion);
-        // Variable con la dirección del ganador 
-        address direccion_ganador = ADN_boleto[eleccion];
-        // Enviarle los tokens del premio al ganador
-        token.returnToken(msg.sender, direccion_ganador, ConsultarBote());
+    //  Function to get a winner
+    function GetWinner() public OnlyOwner(msg.sender) {
+        require(PurchasedTickets.length > 0, "There are not tickets purchased.");
+        //  Get the number of tickets 
+        uint _length = PurchasedTickets.length;
+        //  Get an array position. It's is uint just in case the result is decimal we get the integer part 
+        uint _arrayPosition = uint(uint(keccak256(abi.encodePacked(now))) % _length);
+        //  Get the winner with array position
+        uint _winner = PurchasedTickets[_arrayPosition];
+        emit Winner_Tickets(_winner);
+        //  Winner Address Variable using the mapping that set the relationship between the number and the address buying it
+        address _winnerAddress = NumberAddress[_winner];
+        //  Send the tokens to the winner
+        token.returnToken(msg.sender, _winnerAddress, CheckPot());
     }
 
-    // Devolución de los tokens en ether 
-    function DevolverTokensEther(uint _numTokens) public payable ComprobarDevolucionToken(_numTokens, msg.sender){
-        token.returnToken(msg.sender, contrato, _numTokens);
-        msg.sender.transfer(PrecioToken(_numTokens));
+    /*  Function to convert the tokens in ether
+        _numTokens: token amount to convert in Ether
+    */
+    function ConvertTokens2Ether(uint _numTokens) public payable CheckTokenReturns(_numTokens, msg.sender){
+        token.returnToken(msg.sender, contractAddress, _numTokens);
+        msg.sender.transfer(TokenPrice(_numTokens));
     }
-
-
-// ---------------------------------------------------------- FUNCIONES AUXILIARES ----------------------------------------------
-
-    // Modifier para requerir que sólo el propietario del contrato puede ejecutar la función
-    modifier SoloPropietario(address _direccion) {
-        require(_direccion == owner, "No tienes permisos para ejecutar esta funcion.");
-        _;
-    }
-
-    // Modifier para requerir que el usuario tenga los Ether para asumir el coste
-    modifier ComprobarCompraToken(uint _numTokens) {
-        uint coste = PrecioToken(_numTokens);  // Variable del coste en ether de los tokens
-        uint balanceContrato = BalanceContrato();         // Variable del número de tokens que hay en el contrato
-
-        require(msg.value >= coste, "El ether que envías para comprar ese número de tokens es insuficiente");
-        require(_numTokens > 0, "No has pedido un valor positivo de tokens");
-        require(balanceContrato >= _numTokens, "No hay suficientes tokens en el contrato en este momento. Reduce el número de tokens o espera");
-        _;
-    }
-
-    // Modefier para comprobar las condiciones al comprar boletos 
-    modifier ComprobarCompraBoletos(uint _numBoletos) {
-        // Se calcula el precio de los boletos en tokens
-        uint precio_boletos = _numBoletos * precio_boleto;
-        // Se requiere que el usuario tenga esa cantidad de tokens
-        require(precio_boletos <= token.balanceOf(msg.sender), "No dispones de los suficientes tokens para esos boletos");
-        _;
-    }
-
-    // Modifier para controlar la devolución de tokens a ether 
-    modifier ComprobarDevolucionToken(uint _numTokens, address _direccion) {
-        require(_numTokens > 0, "Se debe introducir una cantidad positiva de tokens");
-        require(_numTokens <= token.balanceOf(_direccion), "No tienes los tokens que pretendes devolver");
-        _;
-    }
-
 }
