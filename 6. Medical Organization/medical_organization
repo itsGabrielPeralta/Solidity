@@ -63,7 +63,7 @@ contract medical_organization {
     */
     function CenterValidate(address _medicalCenter) public OnlyOwner(msg.sender) {
         mCenterValidated[_medicalCenter] = true;
-        emit New_Center_Validated(__medicalCenter);
+        emit New_Center_Validated(_medicalCenter);
     }
 
     //  Function to create a smart contract for medical center
@@ -125,7 +125,7 @@ contract medical_center {
         bytes32 _hashPatientId = keccak256(abi.encodePacked(_idPatient));
         //  Relationship between hash of patient ID and his results and the IPFS code
         mResults[_hashPatientId] = covidResults(_covidResults, _IPFScode);
-        emit New_results(_covidResults, _IPFScode);
+        emit New_Results(_covidResults, _IPFScode);
     }
 
     /*  Function to visualize the results of covid test.
