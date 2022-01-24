@@ -25,11 +25,11 @@ contract ZombieFactory {
     //  The key is address and the value is the amount of zombie that the key address owned
     mapping (address => uint) ownerZombieCount;
     
-    /*  Function to create zombie
+    /*  Function to create zombie. This function has internal modifier in order to be called on another contracts that inherits from this contract.
         _name: zombie name
         _dna: zombie DNA
     */
-    function _createZombie(string _name, uint _dna) private {
+    function _createZombie(string _name, uint _dna) internal {
         //  With the function parameter it's created a new zombie and added into the zombies array
         //  The position in array will be de zombie ID
         //  Get the array length and subtract 1 (because the array start with index 0) to know in what position has been saved the last zombie
