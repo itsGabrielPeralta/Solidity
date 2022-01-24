@@ -16,7 +16,7 @@ contract medical_organization {
     }
 
     //  Mapping with address -> bool. It will be the relationship between the medical center address and if it is validate
-    mapping(address => bool) mCenterAvailable;
+    mapping(address => bool) mCenterValidated;
     //  Mapping with address -> address. It will be the relationship between medical center address and their contract address. Each medical center set a contract 
     //  dependent on medical_organization main contract
     mapping(address => address) public mCenterContractAddress; 
@@ -24,117 +24,126 @@ contract medical_organization {
     //  Array that contains the centers contracts address
     address[] public aCenterContractAddress;
     //  Array that contains the center address who request a contract to the medical organization
-    address[] requests;
+    address[] aRequests;
 
     //  Events
     event Contract_Request(address);
-    event New_Center_Available(address);
+    event New_Center_Validated(address);
     event New_Contract(address, address);
 
 /// --------------------------------------------------------------------- MODIFIER & AUX FUNCTIONS -------------------------------------------------------
     
-    // Modificador para que sólo pueda ejecutar por el propietario (OMS)
-    modifier SoloPropietario(address _direccion) {
-        require(_direccion == owner, "No tienes permisos para ejecutar esta funcion");
+    //  Modifier that assure that address executer is the owner
+    modifier OnlyOwner(address _addressExecuter) {
+        require(_addressExecuter == owner, "This address don't has permissions to execute this function.");
         _;
     }
 
-    // Modificador para controlar que sólo los centros de salud ejecuten la función 
-    modifier SoloCentrosValidados(address _direccion) {
-        require(validacion_centro[_direccion] == true, "Este centro de salud no ha sido validado, por tanto no puede ejecutar esta funcion");
+    //  Modifier that assure that only available center can execute the function
+    modifier OnlyValidatedCenter(address _addressExecuter) {
+        require(mCenterValidated[_addressExecuter] == true, "This medical center isn't validated so it can't execute this function.");
         _;
     }
 
 /// --------------------------------------------------------------------- MEDICAL ORGANIZATION FUNCTIONS -------------------------------------------------------
 
-    // Función para solicitar acceso a la OMS por parte de los centros
-    function SolicitarAcceso() public {
-        solicitudes.push(msg.sender);
-        emit SolicitudAcceso(msg.sender);
+    //  Function to request a contract from medical organization by medical center
+    function RequestContract() public {
+        aRequests.push(msg.sender);
+        emit Contract_Request(msg.sender);
     }
 
-    // Función que visualiza las direcciones que han solicitado acceso 
-    function VisualizarSolicitudes() public view SoloPropietario(msg.sender) returns(address[] memory) {
-        return solicitudes;
+    //  Function to visualize the medical centers address who request a contract from medical organization
+    function VisualizeRequests() public view OnlyOwner(msg.sender) returns(address[] memory) {
+        return aRequests;
     }
 
-    // Función para validar nuevos centros de salud que puedan autogestionarse
-    function ValidarCentro(address _centroSalud) public SoloPropietario(msg.sender) {
-        validacion_centro[_centroSalud] = true;
-        emit NuevoCentroValidado(_centroSalud);
+    /*  Function to validate a center medical address
+        _medicalCenter: medical center address to approve
+    */
+    function CenterValidate(address _medicalCenter) public OnlyOwner(msg.sender) {
+        mCenterValidated[_medicalCenter] = true;
+        emit New_Center_Validated(__medicalCenter);
     }
 
-    // Función que permita crear un contrato inteligente
-    function FactoryCentroSalud() public SoloCentrosValidados(msg.sender) {
-        // Generar smart contract -> generar su dirección
-        address contrato_centroSalud = address (new CentroSalud(msg.sender));
-        // Se almacena la dirección de contrato en el array 
-        direcciones_contratos_centros.push(contrato_centroSalud);
-        centrosalud_contrato[msg.sender] = contrato_centroSalud;
-        emit NuevoContrato(contrato_centroSalud, msg.sender);
+    //  Function to create a smart contract for medical center
+    function CreateCenterContract() public OnlyValidatedCenter(msg.sender) {
+        //  Generate the contract address
+        address _centerContractAddress = address (new medical_center(msg.sender));
+        //  The contract address is saved in the contract address array created before
+        aCenterContractAddress.push(_centerContractAddress);
+        //  Mapping to set the relationship between the center medical address and his contract address
+        mCenterContractAddress[msg.sender] = _centerContractAddress;
+        emit New_Contract(_centerContractAddress, msg.sender);
     }
 }
 
 //  Center contract
-contract CentroSalud {
+contract medical_center {
 
 /// --------------------------------------------------------------------- INITIAL PARAMETERS -------------------------------------------------------
 
-    // Direcciones principales necesarias
-    address public direccionCentroSalud;
-    address public direccionContrato;
+    //  Medical Center Address Variable
+    address public medicalCenterAddress;
+    //  Medical Center Contract Address Variable
+    address public medicalCenterContractAddress;
 
     constructor(address _direccion) {
-        direccionCentroSalud = _direccion;
-        direccionContrato = address(this);
+        medicalCenterAddress = _direccion;
+        medicalCenterContractAddress = address(this);
     }
 
-    struct resultadosCovid {
-        bool diagnostico;
-        string codigoIPFS;
+    //  Struct to simulate Covid diagnostic
+    struct covidResults {
+        bool diagnostic;
+        string IPFScode;
     }
 
-    // Mapping para relacionar el hash de la persona con los resultados (diagnostico, codigo ipfs)
-    mapping (bytes32 => resultadosCovid) resultados;
+    //  Mapping with hash -> resultsCovid struct. It will be the relationship between the patient ID hash and his results struct
+    mapping (bytes32 =>covidResults) mResults;
 
-    // Eventos 
-    event NuevoResultado(bool, string);
+    // Events
+    event New_Results(bool, string);
 
 /// --------------------------------------------------------------------- MODIFIER & AUX FUNCTIONS -------------------------------------------------------
 
-    // Modificador para que sólo el centro de salud pueda ejecutar sus funciones 
-    modifier SoloCentroSalud(address _direccion) {
-        require(_direccion == direccionCentroSalud, "Solo el centro de salud propietario puede ejecutar esta funcion");
+    //  Modifier to control that only the medical center can execute this function 
+    modifier OnlyMedicalCenter(address _addressExecuter) {
+        require(_addressExecuter == medicalCenterAddress, "This address don't has permission to execute this function.");
         _;
     }
 
 /// --------------------------------------------------------------------- CENTER FUNCTIONS -------------------------------------------------------
 
-    // Función para emitir un resultado de una prueba de covid 
-    // DNI / true or false / código de ipfs
-    function ResultadosPruebaCovid(string memory _idPersona, bool _resultadoCovid, string memory _codigoIPFS) public SoloCentroSalud(msg.sender) {
-        // hash de la identificación de la persona
-        bytes32 hash_idPersona = keccak256(abi.encodePacked(_idPersona));
-        // Relación entre el hash de la persona y el resultado de la prueba y el código ipfs
-        resultados[hash_idPersona] = resultadosCovid(_resultadoCovid, _codigoIPFS);
-        emit NuevoResultado(_resultadoCovid, _codigoIPFS);
+    /*  Function to emit the results of a covid test
+        _idPatient: patient ID
+        _covidResults: true if the patient caught covid
+        _IPFScode: code to access to the file storage in IPFS server
+    */
+    function ResultsCovidTest(string memory _idPatient, bool _covidResults, string memory _IPFScode) public OnlyMedicalCenter(msg.sender) {
+        //  Get the hash of the patient ID
+        bytes32 _hashPatientId = keccak256(abi.encodePacked(_idPatient));
+        //  Relationship between hash of patient ID and his results and the IPFS code
+        mResults[_hashPatientId] = covidResults(_covidResults, _IPFScode);
+        emit New_results(_covidResults, _IPFScode);
     }
 
-    // Función para visualizar los resultados del covid 
-    // En esta función se usa una forma distinta de hacer los return. Se pone la variable que se retorna en el propio return y basta con que luego se le de valor
-    function VisualizarResultados(string memory _idPersona) public view returns(string memory _resultadoPrueba, string memory _codigoIPFS) {
-        // hash de la identidad de la persona 
-        bytes32 hash_idPersona = keccak256(abi.encodePacked(_idPersona));
-        // retorno de un booleano como un string
-        string memory resultadoPrueba;
-        
-        if(resultados[hash_idPersona].diagnostico == true)
-            resultadoPrueba = "Positivo";
+    /*  Function to visualize the results of covid test.
+        _idPatient: patient ID
+    */
+    function VisualizeResults(string memory _idPatient) public view returns(string memory _testResults, string memory _IPFScode) {
+        //  Get the hash of patient ID
+        bytes32 _hashPatientId = keccak256(abi.encodePacked(_idPatient));
+        //  The result will be given with string and not with true or false. It will be use the next variable to save the string result
+        string memory _testResultString;
+        //  Check if test results is true or false to complet the result string variable
+        if(mResults[_hashPatientId].diagnostic == true)
+            _testResultString = "Positive";
         else
-            resultadoPrueba = "Negativo";
+            _testResultString = "Negative";
 
-        _resultadoPrueba = resultadoPrueba;
-        _codigoIPFS = resultados[hash_idPersona].codigoIPFS;
+        _testResults = _testResultString;
+        _IPFScode = mResults[_hashPatientId].IPFScode;
     }
 
 }
