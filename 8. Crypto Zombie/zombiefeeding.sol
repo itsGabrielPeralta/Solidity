@@ -34,16 +34,33 @@ contract ZombieFeeding is ZombieFactory {
         kittyContract = KittyInterface(_address);
     }
 
+    /*  Function to set the cooldown period of a zombie
+        _zombie: zombie struct
+    */
+    function _triggerCooldown(Zombie storage _zombie) internal {
+        _zombie.readyTime = uint32(now + cooldownTime);
+    }
+
+    /*  Function to check if a zombie is ready
+        _zombie: zombie struct
+    */
+    function _isReady(Zombie storage _zombie) internal view returns(bool) {
+        // return true if zombie is ready
+        return (_zombie.readyTime <= now);
+    }
+
     /*  Function to feed and multiply the zombie
         _zombieId: zombie ID
         _targetDna: target DNA
         _species: to identify if zombie generation  comes from eat a kitty 
     */
-    function feedAndMultiply(uint _zombieId, uint _targetDna, string _species) public {
+    function feedAndMultiply(uint _zombieId, uint _targetDna, string _species) internal {
         //  Check if the address that executes the function is the zombie owner
         require(msg.sender == zombieToOwner[_zombieId]);
         //  New struct Zombie variable whose values are equal than the zombie of zombies array with position _zombieId. It's the predator zombie
         Zombie storage myZombie = zombies[_zombieId];
+        //  In order to continue the function the zombie must be ready
+        require(_isReady(myZombie));
         //  To control that _targetDna have 16 digits it's calculated the modulus. In case is higher than 16 digits, calculating this
         // modulus we get the last 16 digits
         _targetDna = _targetDna % dnaModulus;
@@ -58,6 +75,8 @@ contract ZombieFeeding is ZombieFactory {
         }
         //  With the function in ZombieFactory a new zombie is created. Just for now the new zombie has no name
         _createZombie("NoName", newDna);
+        //  Because the zombie has fed his cooldown is set
+        _triggerCooldown(myZombie);
     }
   
     /*  Function to get the kitty genes using the CryptoKitty interface and simulate the zombie feeding
