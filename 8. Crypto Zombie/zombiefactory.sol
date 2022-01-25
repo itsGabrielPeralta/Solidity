@@ -1,7 +1,8 @@
 pragma solidity ^0.4.19;
+import "./ownable.sol";
 
 //  Main contract
-contract ZombieFactory {
+contract ZombieFactory is Ownable {
     
     // Event
     event NewZombie(uint zombieId, string name, uint dna);
@@ -10,11 +11,15 @@ contract ZombieFactory {
     uint dnaDigits = 16;
     //  Exponential variable of dnaDigits
     uint dnaModulus = 10 ** dnaDigits;
+    //  Freezing period time variable
+    uint cooldownTime = 1 days;
     
     //  Struct variable to define the zombies
     struct Zombie {
         string name;
         uint dna;
+        uint32 level;
+        uint32 readyTime;   // to limit the feeding period
     }
     
     // The zombies will be storage in array so the proposal of the next variable is this. It's public so everyone can see the zombies
@@ -34,7 +39,7 @@ contract ZombieFactory {
         //  The position in array will be de zombie ID
         //  Get the array length and subtract 1 (because the array start with index 0) to know in what position has been saved the last zombie
         //  Create and add new zombie to the array and get the ID at the same time
-        uint id = zombies.push(Zombie(_name, _dna)) - 1;
+        uint id = zombies.push(Zombie(_name, _dna, 1, uint32(now + cooldownTime))) - 1;
         // To set the zombie owner it's used the mapping defined before to set this relationship id => owner. The owner is the address who executes the function
         zombieToOwner[id] = msg.sender;
         // How this address is owner of a new zombie the count has increased in one unit
