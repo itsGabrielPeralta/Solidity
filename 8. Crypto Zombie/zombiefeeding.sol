@@ -27,6 +27,14 @@ contract ZombieFeeding is ZombieFactory {
     //  Define the interface instance
     KittyInterface kittyContract;
 
+    /*  Modifier to control that the zombie owner is who execute the function to do some action with zombie
+        _zombieId: zombie ID
+    */
+    modifier ownerOf(uint _zombieId) {
+        require(msg.sender == zombieToOwner[_zombieId]);
+        _;
+    }
+
     /*  Function to introduce/change the CryptoKitty Contract Address just in case the project changed the contract address for some reason
         _address: CryptoKitty contract address
     */
@@ -54,9 +62,7 @@ contract ZombieFeeding is ZombieFactory {
         _targetDna: target DNA
         _species: to identify if zombie generation  comes from eat a kitty 
     */
-    function feedAndMultiply(uint _zombieId, uint _targetDna, string _species) internal {
-        //  Check if the address that executes the function is the zombie owner
-        require(msg.sender == zombieToOwner[_zombieId]);
+    function feedAndMultiply(uint _zombieId, uint _targetDna, string _species) internal ownerOf(_zombieId){
         //  New struct Zombie variable whose values are equal than the zombie of zombies array with position _zombieId. It's the predator zombie
         Zombie storage myZombie = zombies[_zombieId];
         //  In order to continue the function the zombie must be ready
