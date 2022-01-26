@@ -3,6 +3,9 @@ import "./zombiefeeding.sol";
 
 contract ZombieHelper is ZombieFeeding {
 
+    //  Level Up Cost Variable
+    uint levelUpFee = 0.001 ether;
+
     /*  Modifier to restrict funcionalities base on zombie level
         _level: level require
         _zombieId: zombie ID
@@ -12,13 +15,36 @@ contract ZombieHelper is ZombieFeeding {
         _;
     }
 
+    //  Function to withdraw ether from the Ethereum contract account to another account
+    function withdraw() external onlyOwner {
+        //  this.balance is the Ether balance on this contract
+        owner.transfer(this.balance);
+    }
+
+    /*  Function to set the level up cost. How the Ether price is volatile it recommended that the cost to level up can change and 
+        how the smart contracts are inmutable is necessary doing by function
+        _fee: new fee to level up
+    */
+    function setLevelUpFee(uint _fee) external onlyOwner {
+        levelUpFee = _fee;
+    }
+
+
+    /*  Function to level up a zombie. It can be done with Ether payment
+        _zombieId: zombie ID to level up
+    */
+    function levelUp(uint _zombieId) external payable {
+        //  Check if the ether value sent with function is equal than levelUpFee
+        require(msg.value == levelUpFee);
+        //  Level up the zombie
+        zombies[_zombieId].level++;
+    }
+
     /*  Function to change a zombie name. Only can change the name if zombie has level equal or higher than 2
         _zombieID: zombie ID to change the name
         _newName: zombie new name
     */
-    function changeName(uint _zombieId, string _newName) external aboveLevel(2, _zombieId){
-        //  Only the zombie owner can change the name
-        require(msg.sender == zombieToOwner[_zombieId]);
+    function changeName(uint _zombieId, string _newName) external aboveLevel(2, _zombieId) ownerOf(_zombieId){
         //  Set the new name
         zombies[_zombieId].name = _newName;
     }
@@ -27,9 +53,7 @@ contract ZombieHelper is ZombieFeeding {
         _zombieId: zombie ID to change the DNA
         _newDna: zombie new DNA
     */
-    function changeDna(uint _zombieId, uint _newDna) external aboveLevel(20, _zombieId){
-        //  Only the zombie owner can change the DNA
-        require(msg.sender == zombieToOwner[_zombieId]);
+    function changeDna(uint _zombieId, uint _newDna) external aboveLevel(20, _zombieId) ownerOf(_zombieId) {
         //  Set the new DNA
         zombies[_zombieId].dna = _newDna;
     }
