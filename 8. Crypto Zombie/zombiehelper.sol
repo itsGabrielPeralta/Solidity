@@ -37,14 +37,14 @@ contract ZombieHelper is ZombieFeeding {
         //  Check if the ether value sent with function is equal than levelUpFee
         require(msg.value == levelUpFee);
         //  Level up the zombie
-        zombies[_zombieId].level++;
+        zombies[_zombieId] = zombies[_zombieId].level.add(1);
     }
 
     /*  Function to change a zombie name. Only can change the name if zombie has level equal or higher than 2
         _zombieID: zombie ID to change the name
         _newName: zombie new name
     */
-    function changeName(uint _zombieId, string _newName) external aboveLevel(2, _zombieId) ownerOf(_zombieId){
+    function changeName(uint _zombieId, string _newName) external aboveLevel(2, _zombieId) onlyOwnerOf(_zombieId){
         //  Set the new name
         zombies[_zombieId].name = _newName;
     }
@@ -53,7 +53,7 @@ contract ZombieHelper is ZombieFeeding {
         _zombieId: zombie ID to change the DNA
         _newDna: zombie new DNA
     */
-    function changeDna(uint _zombieId, uint _newDna) external aboveLevel(20, _zombieId) ownerOf(_zombieId) {
+    function changeDna(uint _zombieId, uint _newDna) external aboveLevel(20, _zombieId) onlyOwnerOf(_zombieId) {
         //  Set the new DNA
         zombies[_zombieId].dna = _newDna;
     }
