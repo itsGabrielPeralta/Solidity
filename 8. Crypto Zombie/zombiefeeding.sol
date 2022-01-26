@@ -30,7 +30,7 @@ contract ZombieFeeding is ZombieFactory {
     /*  Modifier to control that the zombie owner is who execute the function to do some action with zombie
         _zombieId: zombie ID
     */
-    modifier ownerOf(uint _zombieId) {
+    modifier onlyOwnerOf(uint _zombieId) {
         require(msg.sender == zombieToOwner[_zombieId]);
         _;
     }
@@ -62,7 +62,7 @@ contract ZombieFeeding is ZombieFactory {
         _targetDna: target DNA
         _species: to identify if zombie generation  comes from eat a kitty 
     */
-    function feedAndMultiply(uint _zombieId, uint _targetDna, string _species) internal ownerOf(_zombieId){
+    function feedAndMultiply(uint _zombieId, uint _targetDna, string _species) internal onlyOwnerOf(_zombieId){
         //  New struct Zombie variable whose values are equal than the zombie of zombies array with position _zombieId. It's the predator zombie
         Zombie storage myZombie = zombies[_zombieId];
         //  In order to continue the function the zombie must be ready
