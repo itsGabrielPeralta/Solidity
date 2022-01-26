@@ -1,9 +1,14 @@
 pragma solidity ^0.4.19;
 import "./ownable.sol";
+import "./safemath.sol";
 
 //  Main contract
 contract ZombieFactory is Ownable {
     
+    using SafeMath for uint256;
+    using SafeMath32 for uint32;
+    using SafeMath16 for uint16;
+
     // Event
     event NewZombie(uint zombieId, string name, uint dna);
     
@@ -45,7 +50,7 @@ contract ZombieFactory is Ownable {
         // To set the zombie owner it's used the mapping defined before to set this relationship id => owner. The owner is the address who executes the function
         zombieToOwner[id] = msg.sender;
         // How this address is owner of a new zombie the count has increased in one unit
-        ownerZombieCount[msg.sender]++;
+        ownerZombieCount[msg.sender] = ownerZombieCount[msg.sender].add(1);
         //  Emit the new zombie event
         emit NewZombie(id, _name, _dna);
     }
