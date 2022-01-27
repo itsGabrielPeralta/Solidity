@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>CryptoZombies front-end</title>
+    <script language="javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    //  we3.min.js declaration
+    <script language="javascript" type="text/javascript" src="web3.min.js"></script>
+    //  Import the file with our contract ABI obtained after compile the contract
+    <script language="javascript" type="text/javascript" src="cryptozombies_abi.js"></script>
+  </head>
+  <body>
+    <script>
+        //  Contract instance variable
+        var cryptoZombies;
+        //  User account variable
+        var userAccount;
+
+        //  Function to initiate the app 
+        function startApp() {
+            //  Contract address variable
+            var cryptoZombiesAddress = "YOUR_CONTRACT_ADDRESS";
+            //  Instantiate the contract. cryptoZombiesAbi is imported with the script cryptozombies_abi
+            cryptoZombies = new web3js.eth.Contract(cryptoZombiesABI, cryptoZombiesAddress);
+            //  Method to check the active account every 100 ms 
+            var accountInterval = setInterval(function() {
+                //  If active account has changed
+                if (web3.eth.accounts[0] !== userAccount) {
+                    userAccount = web3.eth.accounts[0];
+                    //  Call function to update the UI. Get the zombies owner by the active account and then display them 
+                    getZombiesByOwner(userAccount).then(displayZombies);
+                }
+            }, 100);
+        }
+
+        /// @title  Function to get a zombie details
+        /// @dev    The function returns the position id in the zombies' array
+        /// @param  id: zombie ID to obtain the details 
+        function getZombieDetails(id) {
+            return cryptoZombies.methods.zombies(id).call()
+        }
+
+        /// @title  Function to get the address owner of a zombie
+        /// @dev    The function returns the mapping zombieToOwner      
+        /// @param  id: zombie ID to get the owner address
+        function zombieToOwner(id) {
+            return cryptoZombies.methods.zombieToOwner(id).call()
+        }
+
+        /// @title  Function to get the zombies owner by an address
+        /// @dev    The function call the getZombiesByOwner function in ZombieHelper.sol      
+        /// @param  owner: address from which you want to know the zombies owned
+        function getZombiesByOwner(owner) {
+            return cryptoZombies.methods.getZombiesByOwner(owner).call()
+        }
+
+        //  Method to check if user has Metamask installed in the browser  
+        window.addEventListener('load', function() {
+            //  Check if Web3 has been initiated with Metamask
+            if (typeof web3 !== 'undefined') {
+                //  The user has metamask
+                web3js = new Web3(web3.currentProvider);
+            } else {
+                //  The user don't has metamask
+            }
+            //  Command to start the app
+            startApp()
+        })
+    </script>
+  </body>
+</html>
