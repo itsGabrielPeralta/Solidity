@@ -10,6 +10,10 @@
     <script language="javascript" type="text/javascript" src="cryptozombies_abi.js"></script>
   </head>
   <body>
+    //  Texto message division
+    <div id="txStatus"></div>
+    //  Zombie division
+    <div id="zombies"></div>
     <script>
         //  Contract instance variable
         var cryptoZombies;
@@ -31,7 +35,95 @@
                     getZombiesByOwner(userAccount).then(displayZombies);
                 }
             }, 100);
+
+            // Use `filter` to only fire this code when `_to` equals `userAccount`
+            cryptoZombies.events.Transfer({ filter: { _to: userAccount } })
+            .on("data", function(event) {
+            let data = event.returnValues;
+            // The actual user has received a zombie
+            // Update the user interface (UI) to show the new zombie
+            getZombiesByOwner(userAccount).then(displayZombies);
+            }).on("error", console.error);
         }
+
+        /// @title  Function to display the zombies
+        /// @dev    The function show the zombies. In this project will not be used React or Vue.js which would be the best
+        /// @param  ids: zombies IDs to show
+        function displayZombies(ids) {
+            //  This function is called when the active account change so the first of all is eliminate the div zombies
+            $("#zombies").empty();
+            //  for loop to loop through all zombies
+            for(id of ids) {
+                //  Method call to obtain zombies details and append to the zombies div
+                getZombieDetails(id).then(function(zombie) {
+                    //  In this instance is used "template literals" from ES6 to insert variables on HTML
+                    //  Append each one to the div #zombies
+                    $("#zombies").append(`<div class="zombie">
+                        <ul>
+                        <li>Name: ${zombie.name}</li>
+                        <li>DNA: ${zombie.dna}</li>
+                        <li>Level: ${zombie.level}</li>
+                        <li>Wins: ${zombie.winCount}</li>
+                        <li>Losses: ${zombie.lossCount}</li>
+                        <li>Ready Time: ${zombie.readyTime}</li>
+                        </ul>
+                    </div>`);
+                });
+            }
+        }
+
+        /// @title  Function to create a zombie
+        /// @dev    Function that call the createRandomZombie method on our contract
+        /// @param  name: zombie name
+        function createRandomZombie(name) {
+            $("#txStatus").text("Creating new zombie on the blockchain. This may take a while...");
+            return cryptoZombies.methods.createRandomZombie(name)
+            .send({ from: userAccount })
+            .on("receipt", function(receipt) {
+                $("#txStatus").text("Successfully created " + name + "!");
+                //  If the transaction is correct the UI is update
+                getZombiesByOwner(userAccount).then(displayZombies);
+            })
+            .on("error", function(error) {
+                //  Show message error if the transaction isn't correct
+                $("#txStatus").text(error);
+            });
+        }
+
+        /// @title  Function to eat a kitty
+        /// @dev    Function that call the feedOnKitty method on our contract
+        /// @param  zombieId: zombie ID that eat
+        /// @param  kittyId: kitty ID that zombie is going to eat
+        function feedOnKitty(zombieID, kittyId) {
+            $("#txStatus").text("Eating a kitty. This may take a while...");
+            return cryptoZombies.methods.feedOnKitty(zombieId, kittyId)
+            .send({ from: userAccount })
+            .on("receipt", function(receipt) {
+                $("#txStatus").text("Ate a kitty and spawned a new Zombie!");
+                //  If the transaction is correct the UI is update
+                getZombiesByOwner(userAccount).then(displayZombies);
+            })
+            .on("error", function(error) {
+                //  Show message error if the transaction isn't correct
+                $("#txStatus").text(error);
+            });
+        }
+
+        /// @title  Function to level up a zombie
+        /// @dev    Function that call the levelUp method in our contract. This method is payable so the call must to send a value
+        /// @param  zombieId: zombie ID to level up
+        function levelUp(zombieId) {
+            $("#txStatus").text("Leveling up your zombie...");
+            return cryptoZombies.methods.levelUp(zombieId)
+            .send({ from: userAccount, value: web3js.utils.toWei("0.001", "ether") })
+            .on("receipt", function(receipt) {
+                $("#txStatus").text("Power overwhelming! Zombie successfully leveled up");
+            })
+            .on("error", function(error) {
+                //  Show message error if the transaction isn't correct
+                $("#txStatus").text(error);
+            });
+        }       
 
         /// @title  Function to get a zombie details
         /// @dev    The function returns the position id in the zombies' array
